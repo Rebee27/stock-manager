@@ -55,7 +55,11 @@
                 <td>{{ product.price }} RON</td>
                 <td>
                     <a href="/edit/{{ product.id }}" style="background: #ffc107; color: black; padding: 5px 10px; text-decoration: none; border-radius: 4px; font-size: 14px; font-weight: bold;">Edit</a>
+                    <form action="/delete/{{ product.id }}" method="POST" style="display: inline;">
+                        <button type="submit" class="btn-delete" onclick="return confirm('Are you sure you want to delete this product?');">Delete</button>
+                    </form>
                 </td>
+                    
             </tr>
             {% endfor %}
         </table>
