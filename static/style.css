@@ -1,0 +1,33 @@
+.card-add {
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    padding: 20px;
+    margin-bottom: 25px;
+    border-radius: 8px;
+}
+
+.card-edit {
+    background: #fff3cd;
+    border: 1px solid #ffeba0;
+    padding: 20px;
+    margin-bottom: 25px;
+    border-radius: 8px;
+}
+
+.btn-form {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.btn-add {
+    background: #28a745;
+    color: white;
+}
+
+.btn-edit {
+    background: #ffc107;
+    color: black;
+}
