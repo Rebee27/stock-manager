@@ -19,7 +19,29 @@ def index():
     conn = get_db_connection() # deschide conexiunea la baza de date
     products = conn.execute('SELECT * FROM products').fetchall() # selecteaza toate produsele din baza de date
     conn.close() # inchide conexiunea la baza de date
-    return render_template('index.html', products=products, product_to_edit=None) # returnează fișierul HTML index.html și îi transmite lista de produse
+
+    # search and filter bar
+    search_query = request.args.get('search', '')  # Get the search query from the request parameters
+    filter_status = request.args.get('filter', 'all')  # Get the filter status from the request parameters
+
+    conn = get_db_connection()
+
+    query = 'SELECT * FROM products WHERE 1=1'  # Base query
+    params = []
+
+    if search_query:
+        query += ' AND name LIKE ?'
+        params.append(f'%{search_query}%')
+
+    if filter_status == 'low':
+        query += ' AND quantity < 10'
+    elif filter_status == 'out':
+        query += ' AND quantity = 0'
+
+    products = conn.execute(query, params).fetchall()
+    conn.close()
+
+    return render_template('index.html', products=products, product_to_edit=None, search=search_query, filter_status=filter_status)
 
 # Ruta nouă pentru salvarea datelor din formular (Adăugare)
 @app.route('/add', methods=['POST'])

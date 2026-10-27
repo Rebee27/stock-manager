@@ -37,6 +37,27 @@
             </form>
         </div>
 
+        <!-- BARĂ DE CĂUTARE ȘI FILTRARE -->
+        <div style="background: #eef2f7; padding: 15px; margin-bottom: 20px; border-radius: 8px; border: 1px solid #cbd5e1;">
+            <form method="GET" action="/" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <!-- Search bar -->
+                <input type="text" name="search" value="{{ search }}" placeholder="Search product by name..." style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; min-width: 200px;">
+                
+                <!-- Filter bar -->
+                <select name="filter" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                    <option value="all" {% if filter_status == 'all' %}selected{% endif %}>All products</option>
+                    <option value="low" {% if filter_status == 'low' %}selected{% endif %}>Low stock (≤ 10)</option>
+                    <option value="out" {% if filter_status == 'out' %}selected{% endif %}>Out of stoc</option>
+                </select>
+
+                <button type="submit" style="background: #007bff; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;">Filter</button>
+                
+                {% if search or filter_status != 'all' %}
+                <a href="/" style="text-decoration: none; background: white; padding: 10px; border: 1px solid #d9534f; border-radius: 4px; color: #d9534f; font-weight: bold; font-size: 14px;">Reset</a>
+                {% endif %}
+            </form>
+        </div>
+
         <!-- Tabelul cu produse -->
         <h3>Stock list</h3>
         <table border="1" cellpadding="10" cellspacing="0" style="width: 100%; border-collapse: collapse;">
