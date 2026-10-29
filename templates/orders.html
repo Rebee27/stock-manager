@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <title>Order History</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container" style="padding: 40px; font-family: sans-serif; max-width: 800px; margin: auto;">
+        <h1>Order History</h1>
+        
+        <p><a href="/" style="text-decoration: none; color: #007bff; font-weight: bold;">← Back to Stock Manager</a></p>
+
+        <table border="1" cellpadding="10" cellspacing="0" style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+            <tr style="background: #f2f2f2;">
+                <th>ID Comandă</th>
+                <th>Produs</th>
+                <th>Cantitate comandată</th>
+                <th>Preț Total</th>
+                <th>Data</th>
+            </tr>
+            {% for order in orders %}
+            <tr>
+                <td>{{ order.id }}</td>
+                <td>{{ order.product_name }}</td>
+                <td>{{ order.quantity }}</td>
+                <td>{{ order.total_price }} RON</td>
+                <td>{{ order.date }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="5" style="text-align: center; color: #777;">Nu există comenzi în istoric.</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</body>
+</html>

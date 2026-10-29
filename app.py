@@ -5,6 +5,7 @@ from flask import Flask, render_template, request, redirect
 # redirect --> funcția care ne permite să redirecționăm utilizatorul către o altă pagină
 import sqlite3
 # sqlite3 --> modulul care ne permite să lucrăm cu baza de date SQLite
+import unicodedata
 
 app = Flask(__name__)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
@@ -14,32 +15,59 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row # permite accesarea coloanelor din baza de date ca și cum ar fi atribute ale unui obiect
     return conn # returnează obiectul de conexiune creat
 
+
+def normalize_text(text):
+    if not text:
+        return ""
+    nfkd_form = unicodedata.normalize('NFKD', text)
+    only_ascii = "".join([c for c in nfkd_form if not unicodedata.combining(c)])
+    return only_ascii.lower()
+
+# Această funcție creează automat tabelul orders dacă el nu există deja în stock.db
+def init_db():
+    conn = get_db_connection()
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS orders (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            product_name TEXT NOT NULL,
+            quantity INTEGER NOT NULL,
+            total_price REAL NOT NULL,
+            date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+# Apelăm funcția imediat aici, ca să se creeze tabelul la pornirea serverului
+init_db()
+
 @app.route('/') # accesarea paginii principale a aplicației web
 def index():
-    conn = get_db_connection() # deschide conexiunea la baza de date
-    products = conn.execute('SELECT * FROM products').fetchall() # selecteaza toate produsele din baza de date
-    conn.close() # inchide conexiunea la baza de date
+    raw_search = request.args.get('search', '')  # Preluăm textul căutat
+    filter_status = request.args.get('filter', 'all')  # Preluăm filtrul de stoc
 
-    # search and filter bar
-    search_query = request.args.get('search', '')  # Get the search query from the request parameters
-    filter_status = request.args.get('filter', 'all')  # Get the filter status from the request parameters
+    search_query = normalize_text(raw_search)
 
     conn = get_db_connection()
 
-    query = 'SELECT * FROM products WHERE 1=1'  # Base query
+    query = 'SELECT * FROM products WHERE 1=1'
     params = []
 
-    if search_query:
-        query += ' AND name LIKE ?'
-        params.append(f'%{search_query}%')
-
     if filter_status == 'low':
-        query += ' AND quantity < 10'
+        query += ' AND quantity <= 10'  # Pragul unitar pentru stoc critic (<= 5)
     elif filter_status == 'out':
-        query += ' AND quantity = 0'
+        query += ' AND quantity = 0'   # Stoc epuizat
 
     products = conn.execute(query, params).fetchall()
     conn.close()
+
+    if search_query:
+        filtered_products = []
+        for p in products:
+            normalized_product_name = normalize_text(p['name'])
+            if search_query in normalized_product_name:
+                filtered_products.append(p)
+        products = filtered_products
 
     return render_template('index.html', products=products, product_to_edit=None, search=search_query, filter_status=filter_status)
 
@@ -87,6 +115,45 @@ def delete_product(id):
     conn.commit()
     conn.close()
     return redirect('/')
+
+@app.context_processor
+def inject_low_stock_count():
+    try:
+        conn = get_db_connection()
+        count = conn.execute('SELECT COUNT(*) FROM products WHERE quantity <= 5').fetchone()[0]
+        conn.close()
+    except:
+        count = 0
+    return dict(low_stock_count=count)
+
+@app.route('/order/<int:id>', methods=['POST'])
+def create_order(id):
+    order_qty = int(request.form['order_quantity'])
+
+    conn = get_db_connection()
+    product = conn.execute('SELECT * FROM products WHERE id = ?', (id,)).fetchone()
+    
+    if product and product['quantity'] >= order_qty:
+        new_quantity = product['quantity'] - order_qty
+        total_price = prder_qty * product['price']
+
+        # 1. Actualizăm stocul produsului
+        conn.execute('UPDATE products SET quantity = ? WHERE id = ?', (new_quantity, id))
+        
+        # 2. Salvăm comanda în istoric
+        conn.execute('INSERT INTO orders (product_name, quantity, total_price) VALUES (?, ?, ?)',
+                     (product['name'], order_qty, total_price))        
+        conn.commit()
+    
+    conn.close()
+    return redirect('/')
+
+@app.route('/orders')
+def view_orders():
+    conn = get_db_connection()
+    orders = conn.execute('SELECT * FROM orders ORDER BY id DESC').fetchall()
+    conn.close()
+    return render_template('orders.html', orders=orders)
 
 if __name__ == '__main__':
     app.run(debug=True)

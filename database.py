@@ -8,16 +8,17 @@ def init_db():
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS products (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
+            product_name TEXT NOT NULL,
             quantity INTEGER NOT NULL,
-            price REAL NOT NULL
+            total_price REAL NOT NULL,
+            date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
     
     # Add a test product to the database
     cursor.execute('''
         INSERT INTO products (name, quantity, price) 
-        VALUES ('Hârtie A4', 50, 25.50)
+        VALUES ('Hartie A4', 50, 25.50)
     ''')
     
     conn.commit()

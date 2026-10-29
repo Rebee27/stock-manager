@@ -39,9 +39,9 @@
 
         <!-- BARĂ DE CĂUTARE ȘI FILTRARE -->
         <div style="background: #eef2f7; padding: 15px; margin-bottom: 20px; border-radius: 8px; border: 1px solid #cbd5e1;">
-            <form method="GET" action="/" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <form method="GET" action="/search" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                 <!-- Search bar -->
-                <input type="text" name="search" value="{{ search }}" placeholder="Search product by name..." style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; min-width: 200px;">
+                <input type="text" name="search" value="{{ search }}" placeholder="Search product after name..." style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; min-width: 200px;">
                 
                 <!-- Filter bar -->
                 <select name="filter" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
@@ -58,10 +58,16 @@
             </form>
         </div>
 
+        {% if low_stock_count > 0 %}
+        <div style="background: #f8d7da; color: #ff6c6c; padding: 15px; margin-bottom: 20px; border-radius: 8px; border: 1px solid #f5c6cb; font-weight: bold;">
+        ⚠️ Atenție! Ai {{ low_stock_count }} produse cu stoc critic (≤ 5 bucăți) sau epuizat!
+        </div>
+        {% endif %}
+
         <!-- Tabelul cu produse -->
         <h3>Stock list</h3>
         <table border="1" cellpadding="10" cellspacing="0" style="width: 100%; border-collapse: collapse;">
-            <tr style="background: #f2f2f2;">
+            <tr>
                 <th>ID</th>
                 <th>Product name</th>
                 <th>Quantity</th>
@@ -69,7 +75,7 @@
                 <th>Actions</th>
             </tr>
             {% for product in products %}
-            <tr>
+            <tr bgcolor="{% if product.quantity <= 10 %}#ff6c6c{% else %}transparent{% endif %}">
                 <td>{{ product.id }}</td>
                 <td>{{ product.name }}</td>
                 <td>{{ product.quantity }}</td>
@@ -84,6 +90,7 @@
             </tr>
             {% endfor %}
         </table>
+        <p><a href="/orders" style="text-decoration: none; background: #17a2b8; color: white; padding: 8px 15px; border-radius: 4px; font-weight: bold; display: inline-block; margin-bottom: 20px;">📦 View order history</a></p>
     </div>
 </body>
 </html>
