@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect
+from flask import Flask, render_template, request, redirect, session
 # Flask --> clasa principală a aplicației web
 # render_template --> funcția care ne permite să folosim fișiere HTML
 # request --> funcția care ne permite să preluăm datele dintr-un formular
@@ -9,6 +9,7 @@ import unicodedata
 
 app = Flask(__name__)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
+app.secret_key = 'cheie_secreta_super_sigura'
 
 def get_db_connection():
     conn = sqlite3.connect('stock.db') # deschide conexiunea la baza de date
@@ -22,6 +23,21 @@ def normalize_text(text):
     nfkd_form = unicodedata.normalize('NFKD', text)
     only_ascii = "".join([c for c in nfkd_form if not unicodedata.combining(c)])
     return only_ascii.lower()
+
+# --- RUTA DE LOGIN ---
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        role = request.form.get('role')  # 'manager' sau 'user'
+        session['user_role'] = role
+        return redirect('/')
+    return render_template('login.html')
+
+# --- RUTA DE LOGOUT ---
+@app.route('/logout')
+def logout():
+    session.pop('user_role', None)
+    return redirect('/login')
 
 # Această funcție creează automat tabelul orders dacă el nu există deja în stock.db
 def init_db():
@@ -43,6 +59,9 @@ init_db()
 
 @app.route('/') # accesarea paginii principale a aplicației web
 def index():
+    if 'user_role' not in session:
+        return redirect('/login')
+
     raw_search = request.args.get('search', '')  # Preluăm textul căutat
     filter_status = request.args.get('filter', 'all')  # Preluăm filtrul de stoc
 
@@ -74,6 +93,9 @@ def index():
 # Ruta nouă pentru salvarea datelor din formular (Adăugare)
 @app.route('/add', methods=['POST'])
 def add_product():
+    if session.get('user_role') != 'manager':
+        return "Acces interzis! Doar managerul poate adăuga produse.", 403
+
     name = request.form['name'] # preia valoarea câmpului "name" din formular
     quantity = request.form['quantity'] # preia valoarea câmpului "quantity" din formular
     price = request.form['price'] # preia valoarea câmpului "price" din formular
@@ -88,6 +110,9 @@ def add_product():
 
 @app.route('/edit/<int:id>')
 def edit_product(id):
+    if session.get('user_role') != 'manager':
+        return "Acces interzis!", 403
+
     conn = get_db_connection()
     products = conn.execute('SELECT * FROM products').fetchall()
     product_to_edit = conn.execute('SELECT * FROM products WHERE id = ?', (id,)).fetchone()
@@ -96,6 +121,9 @@ def edit_product(id):
 
 @app.route('/update/<int:id>', methods=['POST'])
 def update_product(id):
+    if session.get('user_role') != 'manager':
+        return "Acces interzis!", 403
+
     name = request.form['name']
     quantity = request.form['quantity']
     price = request.form['price']
@@ -110,6 +138,9 @@ def update_product(id):
 
 @app.route('/delete/<int:id>', methods=['POST'])
 def delete_product(id):
+    if session.get('user_role') != 'manager':
+        return "Acces interzis!", 403 
+
     conn = get_db_connection()
     conn.execute('DELETE FROM products WHERE id = ?', (id,))
     conn.commit()
